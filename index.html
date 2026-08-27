@@ -407,7 +407,20 @@
       .hero-full-image { object-fit: contain; }
       .hero p { font-size: 17px; }
     }
-  </style>
+  
+/* ===== Supabase account UI ===== */
+.auth-actions{display:flex;align-items:center;gap:8px;margin-right:auto;flex-wrap:wrap}
+.auth-action{border:1px solid #d4af37;border-radius:9px;padding:8px 13px;font-family:inherit;font-weight:bold;cursor:pointer;transition:.2s}
+.auth-login{background:transparent;color:#fff}.auth-register{background:#d4af37;color:#111}.auth-account{background:#d4af37;color:#111}.auth-logout{background:#222;color:#fff;border-color:#555}
+.auth-action:hover{transform:translateY(-1px);opacity:.92}
+.auth-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:9999;padding:18px;overflow:auto;align-items:center;justify-content:center}
+.auth-modal-backdrop.show{display:flex}.auth-modal{width:min(560px,100%);background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.35);color:#222}
+.auth-modal-head{background:#111;color:#fff;padding:22px 25px;position:relative;text-align:center;border-bottom:4px solid #d4af37}.auth-modal-head h2{margin:0 0 4px}.auth-modal-head p{margin:0;color:#ddd}
+.auth-close{position:absolute;left:12px;top:6px;border:0;background:none;color:#fff;font-size:30px;cursor:pointer}.auth-form{padding:24px}.auth-form label{display:block;font-weight:bold;margin:10px 0 5px}.auth-form input{width:100%;padding:12px;border:1px solid #d6d6d6;border-radius:9px;font-family:inherit;font-size:15px}.auth-submit{width:100%;margin-top:18px;padding:12px;border:0;border-radius:9px;background:#d4af37;color:#111;font-family:inherit;font-weight:bold;cursor:pointer}.auth-switch{text-align:center;margin-top:14px;font-size:14px;color:#666}.auth-link{border:0;background:none;color:#8b6b0c;font-family:inherit;font-weight:bold;cursor:pointer}.auth-message{margin-top:12px;padding:10px;border-radius:8px;display:none;font-size:14px}.auth-message.show{display:block}.auth-message.error{background:#ffe5e5;color:#9b1c1c}.auth-message.ok{background:#e7f7ed;color:#176b3a}
+.account-panel{padding:24px}.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.account-item{background:#f7f7f7;border-radius:10px;padding:12px}.account-item small{display:block;color:#777;margin-bottom:3px}.shipments-title{font-size:20px;margin:12px 0}.shipment-list{display:grid;gap:12px;max-height:420px;overflow:auto}.shipment-card{border:1px solid #e2e2e2;border-right:4px solid #d4af37;border-radius:10px;padding:14px;background:#fff}.shipment-card h4{margin-bottom:5px}.shipment-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px;color:#555;font-size:14px}.status{display:inline-block;padding:3px 9px;border-radius:20px;background:#f5e7ad;color:#5d4700;font-weight:bold;font-size:12px}
+@media(max-width:800px){.auth-actions{width:100%;justify-content:center}.auth-action{flex:1}.account-grid{grid-template-columns:1fr}.shipment-meta{grid-template-columns:1fr}}
+
+</style>
 </head>
 <body>
 
@@ -419,7 +432,7 @@
       <a href="#services">الخدمات</a>
       <a href="#about">من نحن</a>
       <a href="#contact">اتصل بنا</a>
-    </nav>
+    <div class="auth-actions" id="authActions"><button class="auth-action auth-login" id="loginBtn" type="button" onclick="openAuth('login')">تسجيل الدخول</button><button class="auth-action auth-register" id="registerBtn" type="button" onclick="openAuth('register')">تسجيل</button><button class="auth-action auth-account" id="accountBtn" type="button" onclick="openAccount()" style="display:none">حسابي</button><button class="auth-action auth-logout" id="logoutBtn" type="button" onclick="logout()" style="display:none">تسجيل الخروج</button></div></nav>
   </div>
 </header>
 
@@ -555,6 +568,71 @@
 <footer>
   © 2026 أردن العز للتخليص — جميع الحقوق محفوظة
 </footer>
+
+
+<!-- ===== Supabase Auth / Account ===== -->
+<div class="auth-modal-backdrop" id="authBackdrop" onclick="if(event.target===this)closeAuth()">
+  <div class="auth-modal" role="dialog" aria-modal="true">
+    <div class="auth-modal-head"><button class="auth-close" onclick="closeAuth()" type="button">×</button><h2 id="authTitle">تسجيل الدخول</h2><p id="authSubtitle">ادخل إلى حسابك في أردن العز</p></div>
+    <form class="auth-form" id="loginForm">
+      <label for="loginEmail">البريد الإلكتروني</label><input id="loginEmail" type="email" required autocomplete="email" placeholder="example@email.com">
+      <label for="loginPassword">كلمة المرور</label><input id="loginPassword" type="password" required autocomplete="current-password" placeholder="كلمة المرور">
+      <button class="auth-submit" type="submit">تسجيل الدخول</button>
+      <div class="auth-switch">ليس لديك حساب؟ <button class="auth-link" type="button" onclick="openAuth('register')">إنشاء حساب</button></div>
+      <div id="loginMessage" class="auth-message"></div>
+    </form>
+    <form class="auth-form" id="registerForm" style="display:none">
+      <label for="regName">الاسم الكامل</label><input id="regName" type="text" required autocomplete="name" placeholder="الاسم الكامل">
+      <label for="regPhone">رقم الهاتف</label><input id="regPhone" type="tel" required autocomplete="tel" placeholder="07XXXXXXXX">
+      <label for="regEmail">البريد الإلكتروني</label><input id="regEmail" type="email" required autocomplete="email" placeholder="example@email.com">
+      <label for="regPassword">كلمة المرور</label><input id="regPassword" type="password" required minlength="6" autocomplete="new-password" placeholder="6 أحرف على الأقل">
+      <label for="regPassword2">تأكيد كلمة المرور</label><input id="regPassword2" type="password" required minlength="6" autocomplete="new-password" placeholder="أعد كتابة كلمة المرور">
+      <button class="auth-submit" type="submit">إنشاء الحساب</button>
+      <div class="auth-switch">لديك حساب؟ <button class="auth-link" type="button" onclick="openAuth('login')">تسجيل الدخول</button></div>
+      <div id="registerMessage" class="auth-message"></div>
+    </form>
+  </div>
+</div>
+
+<div class="auth-modal-backdrop" id="accountBackdrop" onclick="if(event.target===this)closeAccount()">
+  <div class="auth-modal" role="dialog" aria-modal="true">
+    <div class="auth-modal-head"><button class="auth-close" onclick="closeAccount()" type="button">×</button><h2>حسابي</h2><p>بياناتك وشحناتك في أردن العز</p></div>
+    <div class="account-panel">
+      <div class="account-grid"><div class="account-item"><small>الاسم</small><strong id="accountName">—</strong></div><div class="account-item"><small>البريد الإلكتروني</small><strong id="accountEmail">—</strong></div><div class="account-item"><small>رقم الهاتف</small><strong id="accountPhone">—</strong></div><div class="account-item"><small>معرّف الحساب</small><strong id="accountId" style="font-size:11px;word-break:break-all">—</strong></div></div>
+      <h3 class="shipments-title">📦 شحناتي</h3><div id="shipmentList" class="shipment-list"><p>جارٍ تحميل الشحنات...</p></div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://lmdusppxkfwuchiocxpa.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_aV0aq1NhITpZHOurIRXoOw_4_vd9eh9';
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+
+function setMessage(id,text,type){const el=document.getElementById(id);el.textContent=text;el.className='auth-message show '+(type||'error')}
+function clearMessages(){['loginMessage','registerMessage'].forEach(id=>{const e=document.getElementById(id);e.className='auth-message';e.textContent=''})}
+function openAuth(mode){clearMessages();const login=mode==='login';document.getElementById('loginForm').style.display=login?'block':'none';document.getElementById('registerForm').style.display=login?'none':'block';document.getElementById('authTitle').textContent=login?'تسجيل الدخول':'إنشاء حساب';document.getElementById('authSubtitle').textContent=login?'ادخل إلى حسابك في أردن العز':'أنشئ حسابك لمتابعة شحناتك';document.getElementById('authBackdrop').classList.add('show');document.body.style.overflow='hidden';setTimeout(()=>document.querySelector(login?'#loginEmail':'#regName')?.focus(),100)}
+function closeAuth(){document.getElementById('authBackdrop').classList.remove('show');document.body.style.overflow=''}
+function openAccount(){document.getElementById('accountBackdrop').classList.add('show');document.body.style.overflow='';loadAccount()}
+function closeAccount(){document.getElementById('accountBackdrop').classList.remove('show');document.body.style.overflow=''}
+function updateAuthUI(user){const logged=!!user;document.getElementById('loginBtn').style.display=logged?'none':'';document.getElementById('registerBtn').style.display=logged?'none':'';document.getElementById('accountBtn').style.display=logged?'':'none';document.getElementById('logoutBtn').style.display=logged?'':'none'}
+
+async function registerUser(e){e.preventDefault();clearMessages();const name=document.getElementById('regName').value.trim(),phone=document.getElementById('regPhone').value.trim(),email=document.getElementById('regEmail').value.trim(),password=document.getElementById('regPassword').value,password2=document.getElementById('regPassword2').value;if(password!==password2){setMessage('registerMessage','كلمتا المرور غير متطابقتين.','error');return}const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name,phone},emailRedirectTo:window.location.origin+window.location.pathname}});if(error){setMessage('registerMessage',error.message,'error');return}if(data.session){setMessage('registerMessage','تم إنشاء الحساب وتسجيل الدخول بنجاح.','ok');setTimeout(closeAuth,700)}else{setMessage('registerMessage','تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيد الحساب ثم سجّل الدخول.','ok')}}
+
+async function loginUser(e){e.preventDefault();clearMessages();const email=document.getElementById('loginEmail').value.trim(),password=document.getElementById('loginPassword').value;const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error){setMessage('loginMessage','تعذر تسجيل الدخول: '+error.message,'error');return}setMessage('loginMessage','تم تسجيل الدخول بنجاح.','ok');setTimeout(closeAuth,500)}
+async function logout(){const {error}=await supabaseClient.auth.signOut();if(error)alert(error.message);else{closeAccount();alert('تم تسجيل الخروج.')}}
+
+async function loadAccount(){const {data:{user},error:userError}=await supabaseClient.auth.getUser();if(userError||!user){closeAccount();return}document.getElementById('accountEmail').textContent=user.email||'—';document.getElementById('accountId').textContent=user.id;const {data:profile}=await supabaseClient.from('profiles').select('full_name,phone,email').eq('id',user.id).maybeSingle();document.getElementById('accountName').textContent=profile?.full_name||user.user_metadata?.full_name||'—';document.getElementById('accountPhone').textContent=profile?.phone||user.user_metadata?.phone||'—';await loadShipments(user.id)}
+async function loadShipments(userId){const box=document.getElementById('shipmentList');box.innerHTML='<p>جارٍ تحميل الشحنات...</p>';const {data,error}=await supabaseClient.from('shipments').select('id,shipment_number,description,origin,destination,shipping_company,package_count,weight,estimated_value,status,notes,created_at').eq('user_id',userId).order('created_at',{ascending:false});if(error){box.innerHTML='<p style="color:#a11">تعذر تحميل الشحنات: '+escapeHtml(error.message)+'</p>';return}if(!data?.length){box.innerHTML='<p>لا توجد شحنات مرتبطة بحسابك حاليًا.</p>';return}box.innerHTML=data.map(s=>`<article class="shipment-card"><h4>الشحنة: ${escapeHtml(s.shipment_number||'—')}</h4><div><span class="status">${escapeHtml(s.status||'قيد المراجعة')}</span></div><div class="shipment-meta"><span>المنشأ: ${escapeHtml(s.origin||'—')}</span><span>الوصول: ${escapeHtml(s.destination||'—')}</span><span>شركة الشحن: ${escapeHtml(s.shipping_company||'—')}</span><span>عدد الطرود: ${escapeHtml(s.package_count??'—')}</span><span>الوزن: ${escapeHtml(s.weight??'—')}</span><span>القيمة: ${escapeHtml(s.estimated_value??'—')}</span></div>${s.description?'<p>الوصف: '+escapeHtml(s.description)+'</p>':''}${s.notes?'<p>ملاحظات: '+escapeHtml(s.notes)+'</p>':''}</article>`).join('')}
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+
+document.getElementById('loginForm').addEventListener('submit',loginUser);document.getElementById('registerForm').addEventListener('submit',registerUser);
+supabaseClient.auth.onAuthStateChange((event,session)=>{updateAuthUI(session?.user||null);if(session?.user){loadAccount()} });
+(async()=>{const {data:{user}}=await supabaseClient.auth.getUser();updateAuthUI(user||null)})();
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAuth();closeAccount()}});
+</script>
 
 </body>
 </html>
